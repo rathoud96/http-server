@@ -1,12 +1,12 @@
-use super::method::Method;
+use super::method::{Method, MethodError};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 
 pub struct Request{
-    path: String,
-    query_string: Option<String>,
+    path: &str,
+    query_string: Option<&str>,
     method: super::method::Method
 }
 
@@ -18,7 +18,25 @@ impl TryFrom<&[u8]> for Request {
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-        unimplemented!()
+
+        if protocol != "HTTP/1.1" {
+            return Err(ParseError::InvalidProtocol);
+        }
+
+        let method: Method = method.parse()?;
+
+        let mut query_string = None;
+
+        if let Some(i) = path.find('?'){
+            query_string = Some(&path[i + 1..].to_string());
+            path = &path[..i];
+        }
+        
+        Ok(Self {
+            path: path.to_string,
+            query_string,
+            method,
+        })
     }
 }
 
@@ -63,6 +81,12 @@ impl ParseError {
 impl From<Utf8Error> for ParseError {
     fn from(_: Utf8Error) -> Self {
         Self::InvalidEncoding
+    }
+}
+
+impl From<MethodError> for ParseError {
+    fn from(_: MethodError) -> Self {
+        Self::InvalidMethod
     }
 }
 
