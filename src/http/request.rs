@@ -8,6 +8,7 @@ use std::str;
 use std::str::Utf8Error;
 
 
+#[derive(Debug)]
 pub struct Request<'buf>{
     path: &'buf str,
     query_string: Option<&'buf str>,
