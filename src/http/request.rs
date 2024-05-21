@@ -4,16 +4,16 @@ use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 
-pub struct Request{
+pub struct Request<'buf>{
     path: &str,
-    query_string: Option<&str>,
+    query_string: Option<&'buf str>,
     method: super::method::Method
 }
 
-impl TryFrom<&[u8]> for Request {
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = String;
 
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'buf [u8]) -> Result<Request<'buf>, Self::Error> {
         let request = str::from_utf8(buf)?;
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
